@@ -30,6 +30,19 @@ const en = {
   defaultAfternoon: 'Afternoon',
   defaultNight: 'Night',
   defaultRest: 'Rest',
+  tabRotation: 'Rotation',
+  patternsTitle: 'Rotation patterns',
+  addPattern: 'New pattern',
+  editPattern: 'Edit pattern',
+  sequenceHint: 'Tap a shift to add a step; tap a step to remove it',
+  dayOff: 'Off',
+  applyFrom: 'Apply from (YYYY-MM-DD)',
+  apply: 'Apply',
+  activeFrom: 'Active from',
+  deactivate: 'Deactivate',
+  deletePatternTitle: 'Delete pattern?',
+  deletePatternMessage: 'If active, its days will disappear from the calendar.',
+  emptySequence: 'No steps yet',
 };
 
 const it: typeof en = {
@@ -62,6 +75,19 @@ const it: typeof en = {
   defaultAfternoon: 'Pomeriggio',
   defaultNight: 'Notte',
   defaultRest: 'Riposo',
+  tabRotation: 'Rotazione',
+  patternsTitle: 'Schemi di rotazione',
+  addPattern: 'Nuovo schema',
+  editPattern: 'Modifica schema',
+  sequenceHint: 'Tocca un turno per aggiungere un passo; tocca un passo per rimuoverlo',
+  dayOff: 'Libero',
+  applyFrom: 'Applica dal (AAAA-MM-GG)',
+  apply: 'Applica',
+  activeFrom: 'Attivo dal',
+  deactivate: 'Disattiva',
+  deletePatternTitle: 'Eliminare lo schema?',
+  deletePatternMessage: 'Se attivo, i suoi giorni spariranno dal calendario.',
+  emptySequence: 'Nessun passo',
 };
 
 const strings = getLocales()[0]?.languageCode === 'it' ? it : en;

@@ -23,6 +23,9 @@ export default function AppTabs() {
           <TabTrigger name="home" href="/" asChild>
             <TabButton>{t('tabCalendar')}</TabButton>
           </TabTrigger>
+          <TabTrigger name="rotation" href="/rotation" asChild>
+            <TabButton>{t('tabRotation')}</TabButton>
+          </TabTrigger>
           <TabTrigger name="shifts" href="/shifts" asChild>
             <TabButton>{t('tabShifts')}</TabButton>
           </TabTrigger>

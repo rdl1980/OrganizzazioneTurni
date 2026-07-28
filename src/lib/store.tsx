@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { t } from '@/lib/i18n';
-import type { AppData, DayAssignment, ShiftType } from '@/lib/types';
+import type { AppData, DayAssignment, RotationPattern, ShiftType } from '@/lib/types';
 
 const STORAGE_KEY = 'shift-calendar/data/v1';
 
@@ -15,6 +15,8 @@ function defaultData(): AppData {
       { id: 'rest', name: t('defaultRest'), abbrev: 'R', color: '#8D8D8D', start: '', end: '' },
     ],
     assignments: {},
+    patterns: [],
+    activePattern: null,
   };
 }
 
@@ -28,6 +30,10 @@ type StoreValue = {
   upsertShiftType: (shift: ShiftType) => void;
   deleteShiftType: (id: string) => void;
   setDay: (key: string, assignment: DayAssignment | null) => void;
+  upsertPattern: (pattern: RotationPattern) => void;
+  deletePattern: (id: string) => void;
+  applyPattern: (patternId: string, anchor: string) => void;
+  deactivatePattern: () => void;
 };
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -40,7 +46,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
       .then((raw) => {
-        if (raw) setData(JSON.parse(raw) as AppData);
+        // Spreading over defaults migrates data saved before new fields existed.
+        if (raw) setData({ ...defaultData(), ...(JSON.parse(raw) as Partial<AppData>) });
       })
       .catch(() => {})
       .finally(() => setLoaded(true));
@@ -67,20 +74,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
 
   const deleteShiftType = (id: string) =>
-    setData((prev) => {
-      const assignments = Object.fromEntries(
+    setData((prev) => ({
+      ...prev,
+      shiftTypes: prev.shiftTypes.filter((s) => s.id !== id),
+      assignments: Object.fromEntries(
         Object.entries(prev.assignments).filter(([, a]) => a.shiftTypeId !== id),
-      );
-      return {
-        shiftTypes: prev.shiftTypes.filter((s) => s.id !== id),
-        assignments,
-      };
-    });
+      ),
+      patterns: prev.patterns.map((p) => ({
+        ...p,
+        sequence: p.sequence.filter((step) => step !== id),
+      })),
+    }));
 
   const setDay = (key: string, assignment: DayAssignment | null) =>
     setData((prev) => {
       const assignments = { ...prev.assignments };
-      if (assignment === null || (assignment.shiftTypeId === null && !assignment.note)) {
+      if (assignment === null) {
         delete assignments[key];
       } else {
         assignments[key] = assignment;
@@ -88,8 +97,42 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return { ...prev, assignments };
     });
 
+  const upsertPattern = (pattern: RotationPattern) =>
+    setData((prev) => {
+      const exists = prev.patterns.some((p) => p.id === pattern.id);
+      return {
+        ...prev,
+        patterns: exists
+          ? prev.patterns.map((p) => (p.id === pattern.id ? pattern : p))
+          : [...prev.patterns, pattern],
+      };
+    });
+
+  const deletePattern = (id: string) =>
+    setData((prev) => ({
+      ...prev,
+      patterns: prev.patterns.filter((p) => p.id !== id),
+      activePattern: prev.activePattern?.patternId === id ? null : prev.activePattern,
+    }));
+
+  const applyPattern = (patternId: string, anchor: string) =>
+    setData((prev) => ({ ...prev, activePattern: { patternId, anchor } }));
+
+  const deactivatePattern = () => setData((prev) => ({ ...prev, activePattern: null }));
+
   return (
-    <StoreContext.Provider value={{ loaded, data, upsertShiftType, deleteShiftType, setDay }}>
+    <StoreContext.Provider
+      value={{
+        loaded,
+        data,
+        upsertShiftType,
+        deleteShiftType,
+        setDay,
+        upsertPattern,
+        deletePattern,
+        applyPattern,
+        deactivatePattern,
+      }}>
       {children}
     </StoreContext.Provider>
   );

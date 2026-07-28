@@ -7,6 +7,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/lib/i18n';
+import { effectiveShiftId, patternShiftId } from '@/lib/pattern';
 import { useStore } from '@/lib/store';
 
 export function DayModal({ dateKey, onClose }: { dateKey: string | null; onClose: () => void }) {
@@ -18,7 +19,7 @@ export function DayModal({ dateKey, onClose }: { dateKey: string | null; onClose
   const [note, setNote] = useState('');
 
   useEffect(() => {
-    setSelectedId(current?.shiftTypeId ?? null);
+    setSelectedId(dateKey ? effectiveShiftId(data, dateKey) : null);
     setNote(current?.note ?? '');
   }, [dateKey]);
 
@@ -28,7 +29,14 @@ export function DayModal({ dateKey, onClose }: { dateKey: string | null; onClose
   const title = `${day} ${t('months')[month - 1]} ${year}`;
 
   const save = () => {
-    setDay(dateKey, { shiftTypeId: selectedId, note: note.trim() || undefined });
+    const trimmedNote = note.trim() || undefined;
+    // An empty day with no note only needs an explicit entry when it must
+    // override the active pattern; otherwise remove the entry entirely.
+    if (selectedId === null && !trimmedNote && patternShiftId(data, dateKey) === null) {
+      setDay(dateKey, null);
+    } else {
+      setDay(dateKey, { shiftTypeId: selectedId, note: trimmedNote });
+    }
     onClose();
   };
 

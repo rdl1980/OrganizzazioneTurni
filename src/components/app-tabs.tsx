@@ -21,6 +21,14 @@ export default function AppTabs() {
         />
       </NativeTabs.Trigger>
 
+      <NativeTabs.Trigger name="rotation">
+        <NativeTabs.Trigger.Label>{t('tabRotation')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          src={require('@/assets/images/tabIcons/explore.png')}
+          renderingMode="template"
+        />
+      </NativeTabs.Trigger>
+
       <NativeTabs.Trigger name="shifts">
         <NativeTabs.Trigger.Label>{t('tabShifts')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon

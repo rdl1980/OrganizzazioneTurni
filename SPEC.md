@@ -58,7 +58,8 @@ Candidati: **ShiftNest**, **TurnoCal**, **ShiftLoop**, **RotaMate**. Working nam
 
 1. Setup: scaffold Expo ✅, repo git ✅, tema ✅, i18n ✅.
 2. Core: tipi di turno + calendario mensile + assegnazione + note + statistiche mese ✅.
-3. Pattern di rotazione + eccezioni.
+3. Pattern di rotazione + eccezioni ✅ (pattern "virtuali": il calendario deriva i giorni dal
+   pattern attivo dalla data àncora in poi; le assegnazioni esplicite sovrascrivono il singolo giorno).
 4. Note, statistiche, notifiche.
 5. Widget + export immagine.
 6. PRO/IAP + paywall.

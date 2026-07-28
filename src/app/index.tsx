@@ -8,8 +8,9 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { buildMonthGrid, todayKey } from '@/lib/dates';
+import { buildMonthGrid, dateKey, todayKey } from '@/lib/dates';
 import { t } from '@/lib/i18n';
+import { patternShiftId } from '@/lib/pattern';
 import { useStore } from '@/lib/store';
 import { formatHours, shiftHours } from '@/lib/types';
 
@@ -29,18 +30,21 @@ export default function CalendarScreen() {
     [data.shiftTypes],
   );
 
-  const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
   const stats = useMemo(() => {
     const counts = new Map<string, number>();
     let hours = 0;
-    for (const [key, assignment] of Object.entries(data.assignments)) {
-      if (!key.startsWith(monthPrefix) || !assignment.shiftTypeId) continue;
-      counts.set(assignment.shiftTypeId, (counts.get(assignment.shiftTypeId) ?? 0) + 1);
-      const shift = shiftById.get(assignment.shiftTypeId);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    for (let day = 1; day <= daysInMonth; day++) {
+      const key = dateKey(year, month, day);
+      const assignment = data.assignments[key];
+      const shiftId = assignment ? assignment.shiftTypeId : patternShiftId(data, key);
+      if (!shiftId) continue;
+      counts.set(shiftId, (counts.get(shiftId) ?? 0) + 1);
+      const shift = shiftById.get(shiftId);
       if (shift) hours += shiftHours(shift);
     }
     return { counts, hours };
-  }, [data.assignments, monthPrefix, shiftById]);
+  }, [data, year, month, shiftById]);
 
   const changeMonth = (delta: number) => {
     const next = new Date(year, month + delta, 1);
@@ -85,9 +89,12 @@ export default function CalendarScreen() {
             <View key={i} style={styles.weekRow}>
               {week.map((cell) => {
                 const assignment = cell.inMonth ? data.assignments[cell.key] : undefined;
-                const shift = assignment?.shiftTypeId
-                  ? shiftById.get(assignment.shiftTypeId)
-                  : undefined;
+                const shiftId = !cell.inMonth
+                  ? null
+                  : assignment
+                    ? assignment.shiftTypeId
+                    : patternShiftId(data, cell.key);
+                const shift = shiftId ? shiftById.get(shiftId) : undefined;
                 const isToday = cell.key === today;
                 return (
                   <Pressable

@@ -13,10 +13,22 @@ export type DayAssignment = {
   note?: string;
 };
 
-/** Assignments are keyed by "YYYY-MM-DD". */
+/** Steps are shift type ids; null is a day off. */
+export type RotationPattern = {
+  id: string;
+  name: string;
+  sequence: (string | null)[];
+};
+
+/**
+ * Assignments are keyed by "YYYY-MM-DD". The active pattern derives shifts for
+ * every day from its anchor onward; explicit assignments override it per day.
+ */
 export type AppData = {
   shiftTypes: ShiftType[];
   assignments: Record<string, DayAssignment>;
+  patterns: RotationPattern[];
+  activePattern: { patternId: string; anchor: string } | null;
 };
 
 const TIME_RE = /^(\d{1,2}):(\d{2})$/;
