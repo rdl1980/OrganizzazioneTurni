@@ -11,6 +11,12 @@ export function textColorOn(background: string): string {
   return (r * 299 + g * 587 + b * 114) / 1000 > 145 ? '#000000' : '#ffffff';
 }
 
+/** Soft translucent tint of a shift color, for day-cell backgrounds. */
+export function tintOf(color: string, dark: boolean): string {
+  const alpha = dark ? '4D' : '2E'; // ~30% / ~18%
+  return `${color}${alpha}`;
+}
+
 export function ShiftPill({ shift, small }: { shift: ShiftType; small?: boolean }) {
   return (
     <View style={[styles.pill, small && styles.pillSmall, { backgroundColor: shift.color }]}>

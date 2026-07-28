@@ -2,7 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { t } from '@/lib/i18n';
-import type { AppData, DayAssignment, RotationPattern, ShiftType } from '@/lib/types';
+import { syncReminders } from '@/lib/notifications';
+import type { AppData, DayAssignment, RotationPattern, Settings, ShiftType } from '@/lib/types';
 
 const STORAGE_KEY = 'shift-calendar/data/v1';
 
@@ -17,6 +18,7 @@ function defaultData(): AppData {
     assignments: {},
     patterns: [],
     activePattern: null,
+    settings: { reminderEnabled: false, reminderTime: '20:00' },
   };
 }
 
@@ -34,6 +36,7 @@ type StoreValue = {
   deletePattern: (id: string) => void;
   applyPattern: (patternId: string, anchor: string) => void;
   deactivatePattern: () => void;
+  setSettings: (partial: Partial<Settings>) => void;
 };
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -55,6 +58,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!loaded) return;
+    // Reschedules also on plain app start, refreshing the 14-day window.
+    syncReminders(data).catch(() => {});
     if (skipSave.current) {
       skipSave.current = false;
       return;
@@ -120,6 +125,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const deactivatePattern = () => setData((prev) => ({ ...prev, activePattern: null }));
 
+  const setSettings = (partial: Partial<Settings>) =>
+    setData((prev) => ({ ...prev, settings: { ...prev.settings, ...partial } }));
+
   return (
     <StoreContext.Provider
       value={{
@@ -132,6 +140,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         deletePattern,
         applyPattern,
         deactivatePattern,
+        setSettings,
       }}>
       {children}
     </StoreContext.Provider>

@@ -43,6 +43,10 @@ const en = {
   deletePatternTitle: 'Delete pattern?',
   deletePatternMessage: 'If active, its days will disappear from the calendar.',
   emptySequence: 'No steps yet',
+  reminderSection: 'Reminders',
+  reminderToggle: "Tomorrow's shift, the evening before",
+  reminderTimeLabel: 'Time (HH:MM)',
+  notifTitle: "Tomorrow's shift",
 };
 
 const it: typeof en = {
@@ -88,6 +92,10 @@ const it: typeof en = {
   deletePatternTitle: 'Eliminare lo schema?',
   deletePatternMessage: 'Se attivo, i suoi giorni spariranno dal calendario.',
   emptySequence: 'Nessun passo',
+  reminderSection: 'Promemoria',
+  reminderToggle: 'Turno di domani, la sera prima',
+  reminderTimeLabel: 'Ora (HH:MM)',
+  notifTitle: 'Turno di domani',
 };
 
 const strings = getLocales()[0]?.languageCode === 'it' ? it : en;

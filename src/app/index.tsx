@@ -3,10 +3,11 @@ import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DayModal } from '@/components/day-modal';
-import { ShiftPill } from '@/components/shift-pill';
+import { tintOf } from '@/components/shift-pill';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { BottomTabInset, Fonts, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
 import { buildMonthGrid, dateKey, todayKey } from '@/lib/dates';
 import { t } from '@/lib/i18n';
@@ -16,6 +17,7 @@ import { formatHours, shiftHours } from '@/lib/types';
 
 export default function CalendarScreen() {
   const theme = useTheme();
+  const isDark = useColorScheme() === 'dark';
   const { data } = useStore();
 
   const now = new Date();
@@ -57,29 +59,61 @@ export default function CalendarScreen() {
     setMonth(now.getMonth());
   };
 
+  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <Pressable onPress={() => changeMonth(-1)} style={styles.navButton} hitSlop={8}>
-              <ThemedText type="subtitle">‹</ThemedText>
-            </Pressable>
-            <Pressable onPress={goToday}>
-              <ThemedText type="smallBold" style={styles.monthTitle}>
-                {t('months')[month]} {year}
+            <ThemedText style={styles.monthTitle}>
+              {t('months')[month]}{' '}
+              <ThemedText style={[styles.monthTitle, { color: theme.textSecondary }]}>
+                {year}
               </ThemedText>
-            </Pressable>
-            <Pressable onPress={() => changeMonth(1)} style={styles.navButton} hitSlop={8}>
-              <ThemedText type="subtitle">›</ThemedText>
-            </Pressable>
+            </ThemedText>
+            <View style={styles.headerActions}>
+              {!isCurrentMonth && (
+                <Pressable
+                  onPress={goToday}
+                  style={({ pressed }) => [
+                    styles.todayChip,
+                    { backgroundColor: theme.accentSoft },
+                    pressed && styles.pressed,
+                  ]}>
+                  <ThemedText type="smallBold" style={{ color: theme.accent }}>
+                    {t('today')}
+                  </ThemedText>
+                </Pressable>
+              )}
+              <Pressable
+                onPress={() => changeMonth(-1)}
+                hitSlop={8}
+                style={({ pressed }) => [
+                  styles.navButton,
+                  { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+                  pressed && styles.pressed,
+                ]}>
+                <ThemedText type="smallBold">‹</ThemedText>
+              </Pressable>
+              <Pressable
+                onPress={() => changeMonth(1)}
+                hitSlop={8}
+                style={({ pressed }) => [
+                  styles.navButton,
+                  { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+                  pressed && styles.pressed,
+                ]}>
+                <ThemedText type="smallBold">›</ThemedText>
+              </Pressable>
+            </View>
           </View>
 
           <View style={styles.weekRow}>
             {t('weekdaysShort').map((label) => (
               <View key={label} style={styles.weekdayCell}>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {label}
+                <ThemedText style={[styles.weekdayLabel, { color: theme.textSecondary }]}>
+                  {label.toUpperCase()}
                 </ThemedText>
               </View>
             ))}
@@ -95,27 +129,42 @@ export default function CalendarScreen() {
                     ? assignment.shiftTypeId
                     : patternShiftId(data, cell.key);
                 const shift = shiftId ? shiftById.get(shiftId) : undefined;
-                const isToday = cell.key === today;
+                const isToday = cell.key === today && cell.inMonth;
                 return (
                   <Pressable
                     key={cell.key}
                     disabled={!cell.inMonth}
                     onPress={() => setSelectedDay(cell.key)}
-                    style={[
+                    style={({ pressed }) => [
                       styles.dayCell,
-                      { backgroundColor: theme.backgroundElement },
+                      {
+                        backgroundColor: shift
+                          ? tintOf(shift.color, isDark)
+                          : theme.backgroundElement,
+                        borderColor: isToday ? theme.accent : theme.border,
+                        borderWidth: isToday ? 2 : StyleSheet.hairlineWidth,
+                      },
                       !cell.inMonth && styles.dayCellMuted,
-                      isToday && { borderColor: theme.text, borderWidth: 2 },
+                      pressed && styles.pressed,
                     ]}>
                     {cell.inMonth && (
                       <>
-                        <ThemedText type="small" themeColor={isToday ? 'text' : 'textSecondary'}>
+                        <ThemedText
+                          style={[
+                            styles.dayNumber,
+                            { color: isToday ? theme.accent : theme.textSecondary },
+                            isToday && styles.dayNumberToday,
+                          ]}>
                           {cell.day}
                         </ThemedText>
                         <View style={styles.dayCellBottom}>
-                          {shift && <ShiftPill shift={shift} small />}
+                          {shift && (
+                            <ThemedText style={[styles.dayAbbrev, { color: theme.text }]}>
+                              {shift.abbrev}
+                            </ThemedText>
+                          )}
                           {assignment?.note && (
-                            <View style={[styles.noteDot, { backgroundColor: theme.textSecondary }]} />
+                            <View style={[styles.noteDot, { backgroundColor: theme.accent }]} />
                           )}
                         </View>
                       </>
@@ -126,24 +175,39 @@ export default function CalendarScreen() {
             </View>
           ))}
 
-          <ThemedView type="backgroundElement" style={styles.statsCard}>
+          <View
+            style={[
+              styles.statsCard,
+              { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+            ]}>
             {data.shiftTypes.map((shift) => {
               const count = stats.counts.get(shift.id) ?? 0;
               if (count === 0) return null;
+              const hours = shiftHours(shift) * count;
               return (
                 <View key={shift.id} style={styles.statsRow}>
-                  <ShiftPill shift={shift} small />
+                  <View style={[styles.statsDot, { backgroundColor: shift.color }]} />
+                  <ThemedText type="small" style={styles.statsName}>
+                    {shift.name}
+                  </ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
                     ×{count}
+                    {hours > 0 && `  ·  ${formatHours(hours)}${t('hoursShort')}`}
                   </ThemedText>
                 </View>
               );
             })}
-            <ThemedText type="smallBold" style={styles.statsTotal}>
-              {t('totalHours')}: {formatHours(stats.hours)}
-              {t('hoursShort')}
-            </ThemedText>
-          </ThemedView>
+            <View style={[styles.statsDivider, { backgroundColor: theme.border }]} />
+            <View style={styles.statsRow}>
+              <ThemedText type="smallBold" style={styles.statsName}>
+                {t('totalHours')}
+              </ThemedText>
+              <ThemedText type="smallBold" style={{ color: theme.accent }}>
+                {formatHours(stats.hours)}
+                {t('hoursShort')}
+              </ThemedText>
+            </View>
+          </View>
         </ScrollView>
       </SafeAreaView>
 
@@ -172,13 +236,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: Spacing.two,
-  },
-  navButton: {
-    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.three,
   },
   monthTitle: {
-    fontSize: 18,
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: '700',
+    fontFamily: Fonts.rounded,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  todayChip: {
+    borderRadius: 999,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.one,
+  },
+  navButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pressed: {
+    opacity: 0.6,
   },
   weekRow: {
     flexDirection: 'row',
@@ -187,31 +272,54 @@ const styles = StyleSheet.create({
   weekdayCell: {
     flex: 1,
     alignItems: 'center',
+    paddingBottom: Spacing.one,
+  },
+  weekdayLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   dayCell: {
     flex: 1,
     minHeight: 64,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.md,
     padding: Spacing.one,
+    paddingTop: 5,
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: Spacing.one,
   },
   dayCellMuted: {
-    opacity: 0.25,
+    opacity: 0.2,
+  },
+  dayNumber: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '500',
+    alignSelf: 'flex-start',
+    paddingLeft: 3,
+  },
+  dayNumberToday: {
+    fontWeight: '800',
   },
   dayCellBottom: {
-    alignSelf: 'stretch',
     alignItems: 'center',
     gap: 2,
+    paddingBottom: 2,
+  },
+  dayAbbrev: {
+    fontSize: 15,
+    fontWeight: '800',
+    fontFamily: Fonts.rounded,
   },
   noteDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    width: 5,
+    height: 5,
+    borderRadius: 3,
   },
   statsCard: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
     padding: Spacing.three,
     gap: Spacing.two,
     marginTop: Spacing.two,
@@ -220,9 +328,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    alignSelf: 'flex-start',
   },
-  statsTotal: {
-    marginTop: Spacing.one,
+  statsDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  statsName: {
+    flex: 1,
+  },
+  statsDivider: {
+    height: StyleSheet.hairlineWidth,
+    alignSelf: 'stretch',
   },
 });

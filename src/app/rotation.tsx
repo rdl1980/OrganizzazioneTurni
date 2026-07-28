@@ -6,7 +6,7 @@ import { PatternModal } from '@/components/pattern-modal';
 import { ShiftPill } from '@/components/shift-pill';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { BottomTabInset, Fonts, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { todayKey } from '@/lib/dates';
 import { t } from '@/lib/i18n';
@@ -28,21 +28,19 @@ export default function RotationScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <ThemedText type="smallBold" style={styles.title}>
-            {t('patternsTitle')}
-          </ThemedText>
+          <ThemedText style={styles.title}>{t('patternsTitle')}</ThemedText>
 
           {active && activeName && (
-            <ThemedView type="backgroundElement" style={styles.activeBanner}>
-              <ThemedText type="small">
+            <View style={[styles.activeBanner, { backgroundColor: theme.accentSoft }]}>
+              <ThemedText type="small" style={{ color: theme.accent, flex: 1 }}>
                 ● {activeName} — {t('activeFrom')} {active.anchor}
               </ThemedText>
-              <Pressable onPress={deactivatePattern}>
-                <ThemedText type="smallBold" themeColor="textSecondary">
+              <Pressable onPress={deactivatePattern} hitSlop={8}>
+                <ThemedText type="smallBold" style={{ color: theme.accent }}>
                   {t('deactivate')}
                 </ThemedText>
               </Pressable>
-            </ThemedView>
+            </View>
           )}
 
           {data.patterns.map((pattern) => {
@@ -51,7 +49,11 @@ export default function RotationScreen() {
               <Pressable key={pattern.id} onPress={() => setEditing(pattern)}>
                 <ThemedView
                   type="backgroundElement"
-                  style={[styles.row, isActive && { borderColor: theme.text, borderWidth: 1.5 }]}>
+                  style={[
+                    styles.row,
+                    { borderColor: isActive ? theme.accent : theme.border },
+                    isActive && { borderWidth: 1.5 },
+                  ]}>
                   <View style={styles.rowMain}>
                     <ThemedText type="smallBold">{pattern.name}</ThemedText>
                     <View style={styles.sequencePreview}>
@@ -74,8 +76,14 @@ export default function RotationScreen() {
                   {!isActive && (
                     <Pressable
                       onPress={() => applyPattern(pattern.id, todayKey())}
-                      style={[styles.applyButton, { borderColor: theme.text }]}>
-                      <ThemedText type="smallBold">{t('apply')}</ThemedText>
+                      style={({ pressed }) => [
+                        styles.applyButton,
+                        { borderColor: theme.accent },
+                        pressed && { opacity: 0.7 },
+                      ]}>
+                      <ThemedText type="smallBold" style={{ color: theme.accent }}>
+                        {t('apply')}
+                      </ThemedText>
                     </Pressable>
                   )}
                 </ThemedView>
@@ -84,9 +92,18 @@ export default function RotationScreen() {
           })}
 
           <Pressable onPress={() => setEditing('new')}>
-            <View style={[styles.addButton, { borderColor: theme.backgroundSelected }]}>
-              <ThemedText type="smallBold">+ {t('addPattern')}</ThemedText>
-            </View>
+            {({ pressed }) => (
+              <View
+                style={[
+                  styles.addButton,
+                  { backgroundColor: theme.accentSoft },
+                  pressed && { opacity: 0.7 },
+                ]}>
+                <ThemedText type="smallBold" style={{ color: theme.accent }}>
+                  + {t('addPattern')}
+                </ThemedText>
+              </View>
+            )}
           </Pressable>
         </ScrollView>
       </SafeAreaView>
@@ -113,21 +130,26 @@ const styles = StyleSheet.create({
     paddingBottom: BottomTabInset + Spacing.four,
   },
   title: {
-    fontSize: 18,
-    paddingVertical: Spacing.two,
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: '700',
+    fontFamily: Fonts.rounded,
+    paddingVertical: Spacing.three,
   },
   activeBanner: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderRadius: Spacing.three,
+    gap: Spacing.two,
+    borderRadius: Radius.lg,
     padding: Spacing.three,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
-    borderRadius: Spacing.three,
+    borderRadius: Radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
     padding: Spacing.three,
   },
   rowMain: {
@@ -151,10 +173,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
   },
   addButton: {
-    borderRadius: Spacing.three,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
+    borderRadius: Radius.lg,
     padding: Spacing.three,
     alignItems: 'center',
+    marginTop: Spacing.one,
   },
 });

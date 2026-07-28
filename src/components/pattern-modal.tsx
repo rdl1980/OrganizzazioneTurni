@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Alert, Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
+import { ModalSheet } from '@/components/modal-sheet';
 import { ShiftPill, textColorOn } from '@/components/shift-pill';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Fonts, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { todayKey } from '@/lib/dates';
 import { t } from '@/lib/i18n';
@@ -78,14 +78,11 @@ export function PatternModal({
     }
   };
 
-  const inputStyle = [styles.input, { color: theme.text, borderColor: theme.backgroundSelected }];
+  const inputStyle = [styles.input, { color: theme.text, borderColor: theme.border }];
 
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable onPress={(e) => e.stopPropagation()} style={styles.cardWrapper}>
-          <ThemedView type="backgroundElement" style={styles.card}>
-            <ThemedText type="smallBold">
+    <ModalSheet onClose={onClose}>
+            <ThemedText style={styles.title}>
               {editing ? t('editPattern') : t('addPattern')}
             </ThemedText>
 
@@ -109,12 +106,12 @@ export function PatternModal({
               ))}
               <Pressable
                 onPress={() => setSequence((s) => [...s, null])}
-                style={[styles.offChip, { borderColor: theme.backgroundSelected }]}>
+                style={[styles.offChip, { borderColor: theme.border }]}>
                 <ThemedText type="small">{t('dayOff')}</ThemedText>
               </Pressable>
             </View>
 
-            <View style={[styles.sequenceBox, { borderColor: theme.backgroundSelected }]}>
+            <View style={[styles.sequenceBox, { borderColor: theme.border }]}>
               {sequence.length === 0 ? (
                 <ThemedText type="small" themeColor="textSecondary">
                   {t('emptySequence')}
@@ -151,15 +148,21 @@ export function PatternModal({
               />
               <Pressable
                 onPress={saveAndApply}
-                style={[styles.applyButton, { borderColor: theme.text }]}>
-                <ThemedText type="smallBold">{t('apply')}</ThemedText>
+                style={({ pressed }) => [
+                  styles.applyButton,
+                  { borderColor: theme.accent },
+                  pressed && styles.pressed,
+                ]}>
+                <ThemedText type="smallBold" style={{ color: theme.accent }}>
+                  {t('apply')}
+                </ThemedText>
               </Pressable>
             </View>
 
             <View style={styles.actions}>
               {editing && (
                 <Pressable onPress={remove} style={styles.actionButton}>
-                  <ThemedText type="small" style={styles.deleteText}>
+                  <ThemedText type="small" style={{ color: theme.danger }}>
                     {t('delete')}
                   </ThemedText>
                 </Pressable>
@@ -172,43 +175,37 @@ export function PatternModal({
                 </Pressable>
                 <Pressable
                   onPress={save}
-                  style={[styles.saveButton, { backgroundColor: theme.text }]}>
-                  <ThemedText type="smallBold" style={{ color: theme.background }}>
+                  style={({ pressed }) => [
+                    styles.saveButton,
+                    { backgroundColor: theme.accent },
+                    pressed && styles.pressed,
+                  ]}>
+                  <ThemedText type="smallBold" style={{ color: theme.onAccent }}>
                     {t('save')}
                   </ThemedText>
                 </Pressable>
               </View>
             </View>
-          </ThemedView>
-        </Pressable>
-      </Pressable>
-    </Modal>
+    </ModalSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Spacing.four,
+  title: {
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '700',
+    fontFamily: Fonts.rounded,
   },
-  cardWrapper: {
-    width: '100%',
-    maxWidth: 460,
-  },
-  card: {
-    borderRadius: Spacing.three,
-    padding: Spacing.four,
-    gap: Spacing.three,
+  pressed: {
+    opacity: 0.7,
   },
   input: {
     borderWidth: 1.5,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.md,
     paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    fontSize: 14,
+    paddingVertical: 10,
+    fontSize: 15,
   },
   chips: {
     flexDirection: 'row',
@@ -271,10 +268,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     borderRadius: 999,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.four,
-  },
-  deleteText: {
-    color: '#E5484D',
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.five,
   },
 });

@@ -60,7 +60,10 @@ Candidati: **ShiftNest**, **TurnoCal**, **ShiftLoop**, **RotaMate**. Working nam
 2. Core: tipi di turno + calendario mensile + assegnazione + note + statistiche mese ✅.
 3. Pattern di rotazione + eccezioni ✅ (pattern "virtuali": il calendario deriva i giorni dal
    pattern attivo dalla data àncora in poi; le assegnazioni esplicite sovrascrivono il singolo giorno).
-4. Note, statistiche, notifiche.
+4. Note ✅, statistiche ✅, notifiche ✅ (promemoria serale del turno di domani, expo-notifications,
+   finestra di 14 giorni rischedulata a ogni modifica/avvio; solo native, stub no-op su web).
+   Redesign UI ✅: token semantici (accent blu #2563EB, palette slate light/dark), celle calendario
+   con tinta del colore turno, bottom-sheet su mobile, feedback al tocco.
 5. Widget + export immagine.
 6. PRO/IAP + paywall.
 7. Store: icone, screenshot, ASO (EN+IT), submission Apple/Google.

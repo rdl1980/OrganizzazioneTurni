@@ -20,6 +20,12 @@ export type RotationPattern = {
   sequence: (string | null)[];
 };
 
+export type Settings = {
+  /** Evening reminder with tomorrow's shift. */
+  reminderEnabled: boolean;
+  reminderTime: string;
+};
+
 /**
  * Assignments are keyed by "YYYY-MM-DD". The active pattern derives shifts for
  * every day from its anchor onward; explicit assignments override it per day.
@@ -29,6 +35,7 @@ export type AppData = {
   assignments: Record<string, DayAssignment>;
   patterns: RotationPattern[];
   activePattern: { patternId: string; anchor: string } | null;
+  settings: Settings;
 };
 
 const TIME_RE = /^(\d{1,2}):(\d{2})$/;

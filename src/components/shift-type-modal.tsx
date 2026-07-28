@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Alert, Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
+import { ModalSheet } from '@/components/modal-sheet';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Fonts, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/lib/i18n';
 import { newId, useStore } from '@/lib/store';
@@ -73,14 +73,11 @@ export function ShiftTypeModal({
     }
   };
 
-  const inputStyle = [styles.input, { color: theme.text, borderColor: theme.backgroundSelected }];
+  const inputStyle = [styles.input, { color: theme.text, borderColor: theme.border }];
 
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable onPress={(e) => e.stopPropagation()} style={styles.cardWrapper}>
-          <ThemedView type="backgroundElement" style={styles.card}>
-            <ThemedText type="smallBold">
+    <ModalSheet onClose={onClose}>
+            <ThemedText style={styles.title}>
               {editing ? t('editShiftType') : t('addShiftType')}
             </ThemedText>
 
@@ -124,7 +121,7 @@ export function ShiftTypeModal({
                   style={[
                     styles.swatch,
                     { backgroundColor: value },
-                    color === value && { borderColor: theme.text, borderWidth: 3 },
+                    color === value && { borderColor: theme.accent, borderWidth: 3 },
                   ]}
                 />
               ))}
@@ -133,7 +130,7 @@ export function ShiftTypeModal({
             <View style={styles.actions}>
               {editing && (
                 <Pressable onPress={remove} style={styles.actionButton}>
-                  <ThemedText type="small" style={styles.deleteText}>
+                  <ThemedText type="small" style={{ color: theme.danger }}>
                     {t('delete')}
                   </ThemedText>
                 </Pressable>
@@ -146,43 +143,37 @@ export function ShiftTypeModal({
                 </Pressable>
                 <Pressable
                   onPress={save}
-                  style={[styles.saveButton, { backgroundColor: theme.text }]}>
-                  <ThemedText type="smallBold" style={{ color: theme.background }}>
+                  style={({ pressed }) => [
+                    styles.saveButton,
+                    { backgroundColor: theme.accent },
+                    pressed && styles.pressed,
+                  ]}>
+                  <ThemedText type="smallBold" style={{ color: theme.onAccent }}>
                     {t('save')}
                   </ThemedText>
                 </Pressable>
               </View>
             </View>
-          </ThemedView>
-        </Pressable>
-      </Pressable>
-    </Modal>
+    </ModalSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Spacing.four,
+  title: {
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '700',
+    fontFamily: Fonts.rounded,
   },
-  cardWrapper: {
-    width: '100%',
-    maxWidth: 420,
-  },
-  card: {
-    borderRadius: Spacing.three,
-    padding: Spacing.four,
-    gap: Spacing.three,
+  pressed: {
+    opacity: 0.7,
   },
   input: {
     borderWidth: 1.5,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.md,
     paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    fontSize: 14,
+    paddingVertical: 10,
+    fontSize: 15,
   },
   row: {
     flexDirection: 'row',
@@ -218,10 +209,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     borderRadius: 999,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.four,
-  },
-  deleteText: {
-    color: '#E5484D',
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.five,
   },
 });
