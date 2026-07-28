@@ -43,7 +43,8 @@ IAP gestito con RevenueCat (o StoreKit/Play Billing via expo-iap).
 
 ## Architettura dati (locale)
 
-- Storage: SQLite (expo-sqlite) o AsyncStorage+JSON — decidere in fase di setup; SQLite preferito per query statistiche.
+- Storage: **AsyncStorage + JSON** (deciso in milestone 2): volumi piccoli (~365 assegnazioni/anno),
+  funziona anche su web per lo sviluppo; statistiche calcolate in JS. SQLite non necessario.
 - Entità: `ShiftType` (id, name, abbrev, color, start, end), `DayAssignment` (date, shiftTypeId, note),
   `RotationPattern` (id, name, sequence[], anchorDate).
 - Regola: le assegnazioni esplicite sovrascrivono il pattern.
@@ -55,8 +56,8 @@ Candidati: **ShiftNest**, **TurnoCal**, **ShiftLoop**, **RotaMate**. Working nam
 
 ## Milestone
 
-1. Setup: scaffold Expo ✅, repo git, SQLite, tema, i18n.
-2. Core: tipi di turno + calendario mensile + assegnazione.
+1. Setup: scaffold Expo ✅, repo git ✅, tema ✅, i18n ✅.
+2. Core: tipi di turno + calendario mensile + assegnazione + note + statistiche mese ✅.
 3. Pattern di rotazione + eccezioni.
 4. Note, statistiche, notifiche.
 5. Widget + export immagine.
