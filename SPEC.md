@@ -64,6 +64,11 @@ Candidati: **ShiftNest**, **TurnoCal**, **ShiftLoop**, **RotaMate**. Working nam
    finestra di 14 giorni rischedulata a ogni modifica/avvio; solo native, stub no-op su web).
    Redesign UI ✅: token semantici (accent blu #2563EB, palette slate light/dark), celle calendario
    con tinta del colore turno, bottom-sheet su mobile, feedback al tocco.
-5. Widget + export immagine.
+5. Export immagine del mese ✅ (react-native-view-shot + expo-sharing, solo native; titolo mese
+   incluso nell'immagine al momento della cattura). Suite di test ✅ (jest-expo, `npm test`:
+   date/griglia, ore turni, cicli di rotazione — 22 test).
+   **Widget home screen: rimandato** — richiede codice nativo (WidgetKit iOS / Glance Android) e
+   una development build EAS, non funziona in Expo Go. Da fare insieme alla milestone store (7),
+   quando si configura EAS Build.
 6. PRO/IAP + paywall.
 7. Store: icone, screenshot, ASO (EN+IT), submission Apple/Google.

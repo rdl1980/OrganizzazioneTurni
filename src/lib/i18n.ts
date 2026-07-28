@@ -47,6 +47,7 @@ const en = {
   reminderToggle: "Tomorrow's shift, the evening before",
   reminderTimeLabel: 'Time (HH:MM)',
   notifTitle: "Tomorrow's shift",
+  shareMonth: 'Share month',
 };
 
 const it: typeof en = {
@@ -96,6 +97,7 @@ const it: typeof en = {
   reminderToggle: 'Turno di domani, la sera prima',
   reminderTimeLabel: 'Ora (HH:MM)',
   notifTitle: 'Turno di domani',
+  shareMonth: 'Condividi il mese',
 };
 
 const strings = getLocales()[0]?.languageCode === 'it' ? it : en;

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,6 +12,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { buildMonthGrid, dateKey, todayKey } from '@/lib/dates';
 import { t } from '@/lib/i18n';
 import { patternShiftId } from '@/lib/pattern';
+import { canShare, shareView } from '@/lib/share-view';
 import { useStore } from '@/lib/store';
 import { formatHours, shiftHours } from '@/lib/types';
 
@@ -24,6 +25,20 @@ export default function CalendarScreen() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [capturing, setCapturing] = useState(false);
+  const exportRef = useRef<View>(null);
+
+  const shareMonth = async () => {
+    // The caption is rendered only while capturing, so the shared image is
+    // self-describing without duplicating the header on screen.
+    setCapturing(true);
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    try {
+      await shareView(exportRef);
+    } finally {
+      setCapturing(false);
+    }
+  };
 
   const weeks = useMemo(() => buildMonthGrid(year, month), [year, month]);
   const today = todayKey();
@@ -109,6 +124,15 @@ export default function CalendarScreen() {
             </View>
           </View>
 
+          <View
+            ref={exportRef}
+            collapsable={false}
+            style={[styles.exportArea, { backgroundColor: theme.background }]}>
+          {capturing && (
+            <ThemedText style={styles.captureTitle}>
+              {t('months')[month]} {year}
+            </ThemedText>
+          )}
           <View style={styles.weekRow}>
             {t('weekdaysShort').map((label) => (
               <View key={label} style={styles.weekdayCell}>
@@ -208,6 +232,24 @@ export default function CalendarScreen() {
               </ThemedText>
             </View>
           </View>
+          </View>
+
+          {canShare && (
+            <Pressable onPress={shareMonth}>
+              {({ pressed }) => (
+                <View
+                  style={[
+                    styles.shareButton,
+                    { backgroundColor: theme.accentSoft },
+                    pressed && styles.pressed,
+                  ]}>
+                  <ThemedText type="smallBold" style={{ color: theme.accent }}>
+                    {t('shareMonth')}
+                  </ThemedText>
+                </View>
+              )}
+            </Pressable>
+          )}
         </ScrollView>
       </SafeAreaView>
 
@@ -340,5 +382,22 @@ const styles = StyleSheet.create({
   statsDivider: {
     height: StyleSheet.hairlineWidth,
     alignSelf: 'stretch',
+  },
+  exportArea: {
+    gap: Spacing.two,
+  },
+  captureTitle: {
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: '700',
+    fontFamily: Fonts.rounded,
+    textAlign: 'center',
+    paddingVertical: Spacing.two,
+  },
+  shareButton: {
+    borderRadius: Radius.lg,
+    padding: Spacing.three,
+    alignItems: 'center',
+    marginTop: Spacing.one,
   },
 });
