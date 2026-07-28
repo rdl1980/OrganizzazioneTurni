@@ -6,6 +6,8 @@ export type ShiftType = {
   color: string;
   start: string;
   end: string;
+  /** Hourly rate in €, for the salary estimate; 0/undefined = not set. */
+  rate?: number;
 };
 
 export type DayAssignment = {
@@ -24,6 +26,8 @@ export type Settings = {
   /** Evening reminder with tomorrow's shift. */
   reminderEnabled: boolean;
   reminderTime: string;
+  /** Sunday surcharge applied to the salary estimate, in percent (e.g. 30). */
+  sundayExtraPct: number;
 };
 
 /**

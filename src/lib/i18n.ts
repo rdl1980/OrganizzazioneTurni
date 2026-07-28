@@ -48,6 +48,20 @@ const en = {
   reminderTimeLabel: 'Time (HH:MM)',
   notifTitle: "Tomorrow's shift",
   shareMonth: 'Share month',
+  exportPdf: 'Export PDF',
+  pdfMonths: 'How many months?',
+  backupSection: 'Backup',
+  exportBackup: 'Export backup',
+  importBackup: 'Import backup',
+  importConfirmTitle: 'Replace all data?',
+  importConfirmMessage: 'Current shifts and settings will be replaced by the backup.',
+  importInvalid: 'Not a valid backup file.',
+  salarySection: 'Salary',
+  ratePlaceholder: '€/h',
+  sundayExtraLabel: 'Sunday surcharge (%)',
+  salaryEstimate: 'Estimated pay',
+  selectedDays: 'selected',
+  ok: 'OK',
 };
 
 const it: typeof en = {
@@ -98,6 +112,20 @@ const it: typeof en = {
   reminderTimeLabel: 'Ora (HH:MM)',
   notifTitle: 'Turno di domani',
   shareMonth: 'Condividi il mese',
+  exportPdf: 'Esporta PDF',
+  pdfMonths: 'Quanti mesi?',
+  backupSection: 'Backup',
+  exportBackup: 'Esporta backup',
+  importBackup: 'Importa backup',
+  importConfirmTitle: 'Sostituire tutti i dati?',
+  importConfirmMessage: 'Turni e impostazioni attuali verranno sostituiti dal backup.',
+  importInvalid: 'File di backup non valido.',
+  salarySection: 'Stipendio',
+  ratePlaceholder: '€/h',
+  sundayExtraLabel: 'Maggiorazione domenica (%)',
+  salaryEstimate: 'Stima stipendio',
+  selectedDays: 'selezionati',
+  ok: 'OK',
 };
 
 const strings = getLocales()[0]?.languageCode === 'it' ? it : en;

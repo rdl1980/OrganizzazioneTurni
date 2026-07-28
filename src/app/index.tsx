@@ -3,7 +3,8 @@ import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DayModal } from '@/components/day-modal';
-import { tintOf } from '@/components/shift-pill';
+import { ModalSheet } from '@/components/modal-sheet';
+import { ShiftPill, tintOf } from '@/components/shift-pill';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Fonts, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
@@ -12,6 +13,9 @@ import { useTheme } from '@/hooks/use-theme';
 import { buildMonthGrid, dateKey, todayKey } from '@/lib/dates';
 import { t } from '@/lib/i18n';
 import { patternShiftId } from '@/lib/pattern';
+import { canExportPdf, exportPdf } from '@/lib/pdf-export';
+import { buildPdfHtml } from '@/lib/pdf-html';
+import { formatMoney, monthSalary } from '@/lib/salary';
 import { canShare, shareView } from '@/lib/share-view';
 import { useStore } from '@/lib/store';
 import { formatHours, shiftHours } from '@/lib/types';
@@ -19,14 +23,37 @@ import { formatHours, shiftHours } from '@/lib/types';
 export default function CalendarScreen() {
   const theme = useTheme();
   const isDark = useColorScheme() === 'dark';
-  const { data } = useStore();
+  const { data, setDay } = useStore();
 
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
+  const [pdfPicker, setPdfPicker] = useState(false);
+  const [selection, setSelection] = useState<Set<string> | null>(null);
   const exportRef = useRef<View>(null);
+
+  const toggleSelect = (key: string) =>
+    setSelection((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next.size > 0 ? next : null;
+    });
+
+  const assignSelection = (shiftTypeId: string | null) => {
+    if (!selection) return;
+    for (const key of selection) {
+      const note = data.assignments[key]?.note;
+      if (shiftTypeId === null && !note && patternShiftId(data, key) === null) {
+        setDay(key, null);
+      } else {
+        setDay(key, { shiftTypeId, note });
+      }
+    }
+    setSelection(null);
+  };
 
   const shareMonth = async () => {
     // The caption is rendered only while capturing, so the shared image is
@@ -62,6 +89,8 @@ export default function CalendarScreen() {
     }
     return { counts, hours };
   }, [data, year, month, shiftById]);
+
+  const salary = useMemo(() => monthSalary(data, year, month), [data, year, month]);
 
   const changeMonth = (delta: number) => {
     const next = new Date(year, month + delta, 1);
@@ -154,20 +183,29 @@ export default function CalendarScreen() {
                     : patternShiftId(data, cell.key);
                 const shift = shiftId ? shiftById.get(shiftId) : undefined;
                 const isToday = cell.key === today && cell.inMonth;
+                const isSelected = selection?.has(cell.key) ?? false;
                 return (
                   <Pressable
                     key={cell.key}
                     disabled={!cell.inMonth}
-                    onPress={() => setSelectedDay(cell.key)}
+                    onPress={() =>
+                      selection ? toggleSelect(cell.key) : setSelectedDay(cell.key)
+                    }
+                    onLongPress={() => setSelection(new Set([cell.key]))}
                     style={({ pressed }) => [
                       styles.dayCell,
                       {
                         backgroundColor: shift
                           ? tintOf(shift.color, isDark)
                           : theme.backgroundElement,
-                        borderColor: isToday ? theme.accent : theme.border,
-                        borderWidth: isToday ? 2 : StyleSheet.hairlineWidth,
+                        borderColor: isSelected
+                          ? theme.accent
+                          : isToday
+                            ? theme.accent
+                            : theme.border,
+                        borderWidth: isSelected || isToday ? 2 : StyleSheet.hairlineWidth,
                       },
+                      isSelected && { backgroundColor: theme.accentSoft },
                       !cell.inMonth && styles.dayCellMuted,
                       pressed && styles.pressed,
                     ]}>
@@ -231,29 +269,114 @@ export default function CalendarScreen() {
                 {t('hoursShort')}
               </ThemedText>
             </View>
+            {salary !== null && (
+              <View style={styles.statsRow}>
+                <ThemedText type="smallBold" style={styles.statsName}>
+                  {t('salaryEstimate')}
+                </ThemedText>
+                <ThemedText type="smallBold" style={{ color: theme.accent }}>
+                  {formatMoney(salary)}
+                </ThemedText>
+              </View>
+            )}
           </View>
           </View>
 
-          {canShare && (
-            <Pressable onPress={shareMonth}>
-              {({ pressed }) => (
-                <View
-                  style={[
-                    styles.shareButton,
-                    { backgroundColor: theme.accentSoft },
-                    pressed && styles.pressed,
-                  ]}>
-                  <ThemedText type="smallBold" style={{ color: theme.accent }}>
-                    {t('shareMonth')}
-                  </ThemedText>
-                </View>
-              )}
-            </Pressable>
-          )}
+          <View style={styles.exportButtons}>
+            {canShare && (
+              <Pressable onPress={shareMonth} style={styles.exportButtonWrapper}>
+                {({ pressed }) => (
+                  <View
+                    style={[
+                      styles.shareButton,
+                      { backgroundColor: theme.accentSoft },
+                      pressed && styles.pressed,
+                    ]}>
+                    <ThemedText type="smallBold" style={{ color: theme.accent }}>
+                      {t('shareMonth')}
+                    </ThemedText>
+                  </View>
+                )}
+              </Pressable>
+            )}
+            {canExportPdf && (
+              <Pressable onPress={() => setPdfPicker(true)} style={styles.exportButtonWrapper}>
+                {({ pressed }) => (
+                  <View
+                    style={[
+                      styles.shareButton,
+                      { backgroundColor: theme.accentSoft },
+                      pressed && styles.pressed,
+                    ]}>
+                    <ThemedText type="smallBold" style={{ color: theme.accent }}>
+                      {t('exportPdf')}
+                    </ThemedText>
+                  </View>
+                )}
+              </Pressable>
+            )}
+          </View>
         </ScrollView>
+
+        {selection && (
+          <View
+            style={[
+              styles.selectionBar,
+              { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+            ]}>
+            <ThemedText type="smallBold">
+              {selection.size} {t('selectedDays')}
+            </ThemedText>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.selectionChips}>
+              <Pressable
+                onPress={() => assignSelection(null)}
+                style={[styles.selectionClear, { borderColor: theme.border }]}>
+                <ThemedText type="small">{t('noShift')}</ThemedText>
+              </Pressable>
+              {data.shiftTypes.map((shift) => (
+                <Pressable key={shift.id} onPress={() => assignSelection(shift.id)}>
+                  <ShiftPill shift={shift} />
+                </Pressable>
+              ))}
+            </ScrollView>
+            <Pressable onPress={() => setSelection(null)} hitSlop={8}>
+              <ThemedText type="smallBold" themeColor="textSecondary">
+                ✕
+              </ThemedText>
+            </Pressable>
+          </View>
+        )}
       </SafeAreaView>
 
       <DayModal dateKey={selectedDay} onClose={() => setSelectedDay(null)} />
+
+      {pdfPicker && (
+        <ModalSheet onClose={() => setPdfPicker(false)}>
+          <ThemedText style={styles.captureTitle}>{t('pdfMonths')}</ThemedText>
+          <View style={styles.pdfChoices}>
+            {[1, 3, 6, 12].map((count) => (
+              <Pressable
+                key={count}
+                onPress={() => {
+                  setPdfPicker(false);
+                  exportPdf(buildPdfHtml(data, year, month, count)).catch(() => {});
+                }}
+                style={({ pressed }) => [
+                  styles.pdfChoice,
+                  { backgroundColor: theme.accentSoft },
+                  pressed && styles.pressed,
+                ]}>
+                <ThemedText type="smallBold" style={{ color: theme.accent }}>
+                  {count}
+                </ThemedText>
+              </Pressable>
+            ))}
+          </View>
+        </ModalSheet>
+      )}
     </ThemedView>
   );
 }
@@ -399,5 +522,44 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     alignItems: 'center',
     marginTop: Spacing.one,
+  },
+  exportButtons: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  exportButtonWrapper: {
+    flex: 1,
+  },
+  selectionBar: {
+    position: 'absolute',
+    bottom: BottomTabInset + Spacing.two,
+    left: Spacing.three,
+    right: Spacing.three,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    borderRadius: Radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: Spacing.three,
+  },
+  selectionChips: {
+    gap: Spacing.two,
+    alignItems: 'center',
+  },
+  selectionClear: {
+    borderRadius: 8,
+    borderWidth: 1.5,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  pdfChoices: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  pdfChoice: {
+    flex: 1,
+    borderRadius: Radius.md,
+    paddingVertical: Spacing.three,
+    alignItems: 'center',
   },
 });

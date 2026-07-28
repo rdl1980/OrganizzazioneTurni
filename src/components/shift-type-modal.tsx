@@ -30,6 +30,7 @@ export function ShiftTypeModal({
   const [abbrev, setAbbrev] = useState('');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
+  const [rate, setRate] = useState('');
   const [color, setColor] = useState(PALETTE[0]);
 
   useEffect(() => {
@@ -37,6 +38,7 @@ export function ShiftTypeModal({
     setAbbrev(editing?.abbrev ?? '');
     setStart(editing?.start ?? '');
     setEnd(editing?.end ?? '');
+    setRate(editing?.rate ? String(editing.rate) : '');
     setColor(editing?.color ?? PALETTE[0]);
   }, [shift]);
 
@@ -45,6 +47,7 @@ export function ShiftTypeModal({
   const save = () => {
     const trimmed = name.trim();
     if (!trimmed) return;
+    const parsedRate = parseFloat(rate.replace(',', '.'));
     upsertShiftType({
       id: editing?.id ?? newId(),
       name: trimmed,
@@ -52,6 +55,7 @@ export function ShiftTypeModal({
       color,
       start: isValidTime(start.trim()) ? start.trim() : '',
       end: isValidTime(end.trim()) ? end.trim() : '',
+      rate: Number.isFinite(parsedRate) && parsedRate > 0 ? parsedRate : undefined,
     });
     onClose();
   };
@@ -97,6 +101,16 @@ export function ShiftTypeModal({
                 placeholderTextColor={theme.textSecondary}
                 style={[...inputStyle, styles.rowItem]}
               />
+              <TextInput
+                value={rate}
+                onChangeText={setRate}
+                placeholder={t('ratePlaceholder')}
+                keyboardType="decimal-pad"
+                placeholderTextColor={theme.textSecondary}
+                style={[...inputStyle, styles.rowItem]}
+              />
+            </View>
+            <View style={styles.row}>
               <TextInput
                 value={start}
                 onChangeText={setStart}

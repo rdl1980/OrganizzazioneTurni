@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+import {
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { textColorOn } from '@/components/shift-pill';
@@ -8,6 +17,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Fonts, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { canBackup, exportBackup, pickBackup } from '@/lib/backup';
 import { t } from '@/lib/i18n';
 import { ensurePermissions } from '@/lib/notifications';
 import { useStore } from '@/lib/store';
@@ -15,9 +25,30 @@ import { formatHours, isValidTime, shiftHours, type ShiftType } from '@/lib/type
 
 export default function ShiftsScreen() {
   const theme = useTheme();
-  const { data, setSettings } = useStore();
+  const { data, setSettings, replaceData } = useStore();
   const [editing, setEditing] = useState<ShiftType | 'new' | null>(null);
   const [timeDraft, setTimeDraft] = useState(data.settings.reminderTime);
+  const [sundayDraft, setSundayDraft] = useState(
+    data.settings.sundayExtraPct ? String(data.settings.sundayExtraPct) : '',
+  );
+
+  const commitSunday = () => {
+    const parsed = parseFloat(sundayDraft.replace(',', '.'));
+    setSettings({ sundayExtraPct: Number.isFinite(parsed) && parsed > 0 ? parsed : 0 });
+  };
+
+  const importFlow = async () => {
+    const picked = await pickBackup();
+    if (picked.status === 'cancelled') return;
+    if (picked.status === 'invalid') {
+      Alert.alert(t('importInvalid'));
+      return;
+    }
+    Alert.alert(t('importConfirmTitle'), t('importConfirmMessage'), [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('ok'), style: 'destructive', onPress: () => replaceData(picked.data) },
+    ]);
+  };
 
   const toggleReminder = async (enabled: boolean) => {
     if (enabled && !(await ensurePermissions()) && Platform.OS !== 'web') return;
@@ -109,6 +140,51 @@ export default function ShiftsScreen() {
               </View>
             )}
           </ThemedView>
+
+          <ThemedText style={styles.title}>{t('salarySection')}</ThemedText>
+          <ThemedView
+            type="backgroundElement"
+            style={[styles.reminderCard, { borderColor: theme.border }]}>
+            <View style={styles.reminderRow}>
+              <ThemedText type="small" style={styles.reminderLabel}>
+                {t('sundayExtraLabel')}
+              </ThemedText>
+              <TextInput
+                value={sundayDraft}
+                onChangeText={setSundayDraft}
+                onBlur={commitSunday}
+                onSubmitEditing={commitSunday}
+                placeholder="0"
+                keyboardType="decimal-pad"
+                placeholderTextColor={theme.textSecondary}
+                style={[styles.timeInput, { color: theme.text, borderColor: theme.border }]}
+              />
+            </View>
+          </ThemedView>
+
+          {canBackup && (
+            <>
+              <ThemedText style={styles.title}>{t('backupSection')}</ThemedText>
+              <ThemedView
+                type="backgroundElement"
+                style={[styles.reminderCard, { borderColor: theme.border }]}>
+                <Pressable onPress={() => exportBackup(data).catch(() => {})}>
+                  {({ pressed }) => (
+                    <ThemedText type="smallBold" style={[{ color: theme.accent }, pressed && styles.pressedText]}>
+                      {t('exportBackup')}
+                    </ThemedText>
+                  )}
+                </Pressable>
+                <Pressable onPress={() => importFlow().catch(() => {})}>
+                  {({ pressed }) => (
+                    <ThemedText type="smallBold" style={[{ color: theme.accent }, pressed && styles.pressedText]}>
+                      {t('importBackup')}
+                    </ThemedText>
+                  )}
+                </Pressable>
+              </ThemedView>
+            </>
+          )}
         </ScrollView>
       </SafeAreaView>
 
@@ -187,5 +263,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     minWidth: 76,
     textAlign: 'center',
+  },
+  pressedText: {
+    opacity: 0.6,
   },
 });

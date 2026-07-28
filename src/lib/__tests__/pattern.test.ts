@@ -8,7 +8,7 @@ const base: AppData = {
     { id: 'p1', name: '2-2-2-2', sequence: ['m', 'm', 'p', 'p', 'n', 'n', null, null] },
   ],
   activePattern: { patternId: 'p1', anchor: '2026-08-01' },
-  settings: { reminderEnabled: false, reminderTime: '20:00' },
+  settings: { reminderEnabled: false, reminderTime: '20:00', sundayExtraPct: 0 },
 };
 
 describe('patternShiftId', () => {

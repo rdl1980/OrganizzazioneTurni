@@ -18,7 +18,7 @@ function defaultData(): AppData {
     assignments: {},
     patterns: [],
     activePattern: null,
-    settings: { reminderEnabled: false, reminderTime: '20:00' },
+    settings: { reminderEnabled: false, reminderTime: '20:00', sundayExtraPct: 0 },
   };
 }
 
@@ -37,6 +37,8 @@ type StoreValue = {
   applyPattern: (patternId: string, anchor: string) => void;
   deactivatePattern: () => void;
   setSettings: (partial: Partial<Settings>) => void;
+  /** Wholesale replacement, used by backup restore. */
+  replaceData: (next: AppData) => void;
 };
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -49,8 +51,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
       .then((raw) => {
-        // Spreading over defaults migrates data saved before new fields existed.
-        if (raw) setData({ ...defaultData(), ...(JSON.parse(raw) as Partial<AppData>) });
+        // Spreading over defaults migrates data saved before new fields existed;
+        // settings need their own spread, being nested.
+        if (!raw) return;
+        const parsed = JSON.parse(raw) as Partial<AppData>;
+        const defaults = defaultData();
+        setData({
+          ...defaults,
+          ...parsed,
+          settings: { ...defaults.settings, ...(parsed.settings ?? {}) },
+        });
       })
       .catch(() => {})
       .finally(() => setLoaded(true));
@@ -128,6 +138,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const setSettings = (partial: Partial<Settings>) =>
     setData((prev) => ({ ...prev, settings: { ...prev.settings, ...partial } }));
 
+  const replaceData = (next: AppData) => setData(next);
+
   return (
     <StoreContext.Provider
       value={{
@@ -141,6 +153,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         applyPattern,
         deactivatePattern,
         setSettings,
+        replaceData,
       }}>
       {children}
     </StoreContext.Provider>
